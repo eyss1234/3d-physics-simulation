@@ -68,6 +68,8 @@ const environmentMapTexture = cubeTextureLoader.load([
  */
 // World
 const world = new CANNON.World()
+world.broadphase = new CANNON.SAPBroadphase(world)
+world.allowSleep = true
 world.gravity.set(0, -9.82, 0)
 
 // Physics Materials
@@ -105,7 +107,7 @@ const floor = new THREE.Mesh(
     new THREE.MeshStandardMaterial({
         color: '#777777',
         metalness: 0.3,
-        roughness: 0.5,
+        roughness: 0.3,
         envMap: environmentMapTexture,
         envMapIntensity: 0.5
     })
