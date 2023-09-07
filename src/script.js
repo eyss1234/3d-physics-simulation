@@ -9,9 +9,10 @@ THREE.ColorManagement.enabled = false
  * Debug
  */
 const gui = new dat.GUI()
-const debugObject = {}
+const debugSphereObject = {}
+const debugBoxObject = {}
 
-debugObject.createSphere = () => {
+debugSphereObject.createSphere = () => {
     createSphere(
         Math.random() * 0.5,
           {
@@ -21,7 +22,22 @@ debugObject.createSphere = () => {
           }
         )
 }
-gui.add(debugObject, 'createSphere')
+
+debugBoxObject.createBox = () => {
+    createBox(
+        Math.random(),
+        Math.random(),
+        Math.random(),
+          {
+            x: (Math.random() - 0.5) * 3, 
+            y:3, 
+            z:(Math.random() - 0.5) * 3
+          }
+        )
+}
+
+gui.add(debugSphereObject, 'createSphere')
+gui.add(debugBoxObject, 'createBox')
 
 /**
  * Base
@@ -167,22 +183,51 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  */
 const objectsToUpdate = []
 
+const boxGeometry = new THREE.BoxGeometry( 1, 1, 1 ); 
 const sphereGeometry =  new THREE.SphereGeometry(1, 20, 20)
-const sphereMaterial = new THREE.MeshStandardMaterial({
+
+const material = new THREE.MeshStandardMaterial({
         metalness: 0.3,
         roughness: 0.4,
-        envMap: environmentMapTexture
+        envMap: environmentMapTexture,
+        envMapIntensity: 0.5
     })
 
+const createBox = (width, height, depth, position) => {
+    // Three.js Mesh - BOX
+    const boxMesh = new THREE.Mesh(boxGeometry, material)
+    boxMesh.scale.set(width, height, depth)
+    boxMesh.castShadow = true
+    boxMesh.position.copy(position)
+    scene.add (boxMesh)
+
+    // Cannon.js Body - BOX
+    const boxShape = new CANNON.Box(new CANNON.Vec3(width * 0.5, height * 0.5, depth * 0.5))
+    const boxBody = new CANNON.Body({
+        mass: 1,
+        position: new CANNON.Vec3(0, 3, 0),
+        shape: boxShape,
+        material: defaultMaterial
+    })
+    boxBody.position.copy(position)
+    world.addBody(boxBody)
+
+    // Save in objects to update
+    objectsToUpdate.push({
+        mesh: boxMesh,
+        body: boxBody
+    })
+}
+
 const createSphere = (radius, position) => {
-    // Three.js Mesh
-    const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMaterial)
+    // Three.js Mesh - SPHERE
+    const sphereMesh = new THREE.Mesh(sphereGeometry, material)
     sphereMesh.scale.set(radius, radius, radius)
     sphereMesh.castShadow = true
     sphereMesh.position.copy(position)
     scene.add (sphereMesh)
 
-    // Cannon.js body
+    // Cannon.js body - SPHERE
     const sphereShape = new CANNON.Sphere(radius)
     const sphereBody = new CANNON.Body({
         mass: 1,
@@ -220,6 +265,7 @@ const tick = () =>
 
     for(const object of objectsToUpdate){
         object.mesh.position.copy(object.body.position)
+        object.mesh.quaternion.copy(object.body.quaternion)
     }
 
     // Update controls
