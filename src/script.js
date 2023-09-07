@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'lil-gui'
 import CANNON from 'cannon'
+import { generateUUID } from 'three/src/math/MathUtils'
 
 THREE.ColorManagement.enabled = false
 
@@ -9,10 +10,9 @@ THREE.ColorManagement.enabled = false
  * Debug
  */
 const gui = new dat.GUI()
-const debugSphereObject = {}
-const debugBoxObject = {}
+const debugObject = {}
 
-debugSphereObject.createSphere = () => {
+debugObject.createSphere = () => {
     createSphere(
         Math.random() * 0.5,
           {
@@ -23,7 +23,7 @@ debugSphereObject.createSphere = () => {
         )
 }
 
-debugBoxObject.createBox = () => {
+debugObject.createBox = () => {
     createBox(
         Math.random(),
         Math.random(),
@@ -36,8 +36,21 @@ debugBoxObject.createBox = () => {
         )
 }
 
-gui.add(debugSphereObject, 'createSphere')
-gui.add(debugBoxObject, 'createBox')
+debugObject.reset = () => {
+    for(const object of objectsToUpdate){
+        // Remove body
+        object.body.removeEventListener('collide', playHitSound)
+        world.removeBody(object.body)
+        
+        // Remove mesh
+        scene.remove(object.mesh)
+    }
+    objectsToUpdate.splice(0, objectsToUpdate.length)
+}
+
+gui.add(debugObject, 'createSphere')
+gui.add(debugObject, 'createBox')
+gui.add(debugObject, 'reset')
 
 /**
  * Base
